@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/rdt/project_initializer'
+
+command = ARGV.shift
+
+case command
+when 'init_project'
+  RDT::ProjectInitializer.run(ARGV)
+when 'csv_json'
+  RDT::CSVJSONConverter.run(ARGV)
+else
+  puts "Usage: rdt [init_project | csv_json | ...]"
+end
