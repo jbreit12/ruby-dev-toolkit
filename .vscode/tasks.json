@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "GitHelper: Menu (Bash)",
+      "type": "shell",
+      "command": "./scripts/githelper.sh",
+      "args": ["menu"],
+      "group": "build",
+      "presentation": { "echo": true, "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHelper: Menu (PowerShell)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/GitHelper.ps1", "-Action", "menu"],
+      "group": "build",
+      "presentation": { "echo": true, "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHelper: Sync with Base",
+      "type": "shell",
+      "command": "./scripts/githelper.sh",
+      "args": ["sync"],
+      "group": "build",
+      "presentation": { "echo": true, "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHelper: Commit+Push (prompt)",
+      "type": "shell",
+      "command": "./scripts/githelper.sh",
+      "args": ["commitpush"],
+      "group": "build",
+      "presentation": { "echo": true, "reveal": "always" },
+      "problemMatcher": []
+    }
+  ]
+}

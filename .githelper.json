@@ -1,0 +1,11 @@
+{
+  "defaultBase": "dev",
+  "syncStrategy": "rebase",
+  "remoteName": "origin",
+  "enforcePrefix": true,
+  "allowedPrefixes": ["feature/", "bugfix/", "hotfix/"],
+  "protect": ["main", "dev"],
+  "confirmOnPrune": true,
+  "confirmOnSync": false,
+  "logLevel": "info"
+}
