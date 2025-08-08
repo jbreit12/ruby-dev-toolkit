@@ -92,12 +92,13 @@ def action_help
       list                List local & remote branches
       checkout -b <name>  Checkout or create branch
       newbranch -b <name> Create new branch from base
-      commitpush -m "<msg>"  Stage all, commit, push
-      pull                Pull with strategy
-      sync                Update current branch on top of base
+      commitpush -m "<msg>"  Stage all, commit, push (runs pre-commit checks)
+      pull                Pull with strategy (auto-stash)
+      sync                Update current branch on top of base (auto-stash)
       prune               Prune remotes
       status              git status short
       upstream            Set upstream if missing
+      cleanbranches       Interactive cleanup of stale local branches
 
     Flags:
       --branch/-b <name>
@@ -118,7 +119,7 @@ def action_help
 end
 
 def action_menu
-  opts = %w[help fetch list checkout newbranch commitpush pull sync prune status upstream exit]
+  opts = %w[help fetch list checkout newbranch commitpush pull sync prune status upstream cleanbranches exit]
   loop do
     print "Choose action: #{opts.join(', ')}: "
     sel = $stdin.gets.strip
@@ -179,6 +180,9 @@ def action_commitpush(msg=nil, dryrun=false)
   if msg.nil? || msg.empty?
     log("error", "No commit message"); exit(EXIT_INVALID_ARGS)
   end
+  unless pre_commit_checks
+    log("error", "Pre-commit checks failed. Commit aborted."); exit(EXIT_FAILED)
+  end
   system('git add -A')
   system("git commit -m \"#{msg}\"") || log("info", "Nothing to commit")
   branch = `git rev-parse --abbrev-ref HEAD`.strip
@@ -187,11 +191,14 @@ end
 
 def action_pull
   branch = `git rev-parse --abbrev-ref HEAD`.strip
+  stash_needed = !`git status --porcelain`.strip.empty?
+  system('git stash') if stash_needed
   if CONFIG["syncStrategy"] == "rebase"
     system("git pull --rebase #{CONFIG["remoteName"]} #{branch}")
   else
     system("git pull #{CONFIG["remoteName"]} #{branch}")
   end
+  system('git stash pop') if stash_needed
 end
 
 def action_sync(yes=false)
@@ -199,6 +206,8 @@ def action_sync(yes=false)
   if is_protected_branch(branch) && CONFIG["confirmOnSync"] && !confirm("Sync on protected branch. Continue?", yes)
     exit(EXIT_BLOCKED)
   end
+  stash_needed = !`git status --porcelain`.strip.empty?
+  system('git stash') if stash_needed
   system("git fetch #{CONFIG["remoteName"]} #{CONFIG["defaultBase"]}")
   if CONFIG["syncStrategy"] == "rebase"
     unless system("git rebase #{CONFIG["remoteName"]}/#{CONFIG["defaultBase"]}")
@@ -211,6 +220,7 @@ def action_sync(yes=false)
       exit(EXIT_FAILED)
     end
   end
+  system('git stash pop') if stash_needed
 end
 
 def action_prune(yes=false)
@@ -261,9 +271,38 @@ def main
   when "prune" then action_prune(ARGV.include?("--yes") || ARGV.include?("-y"))
   when "status" then action_status
   when "upstream" then action_upstream
+  when "cleanbranches" then action_cleanbranches
   else
     log("error", "Unknown action: #{action}"); action_help; exit(EXIT_INVALID_ARGS)
   end
+end
+
+# --- New Features ---
+def action_cleanbranches
+  local_branches = `git branch --format="%(refname:short)"`.lines.map(&:strip)
+  remote_branches = `git branch -r --format="%(refname:short)"`.lines.map { |b| b.sub(/^[^\/]+\//, '').strip }
+  stale = local_branches - remote_branches - ["main", "dev"]
+  if stale.empty?
+    puts "No stale branches to clean."
+    return
+  end
+  puts "Stale local branches:"
+  stale.each_with_index { |b, i| puts "  [#{i+1}] #{b}" }
+  print "Delete these branches? [y/N]: "
+  ans = $stdin.gets.strip
+  if ans =~ /^[Yy]$/
+    stale.each { |b| system("git branch -D #{b}") }
+    puts "Deleted stale branches."
+  else
+    puts "No branches deleted."
+  end
+end
+
+def pre_commit_checks
+  # Example: run tests and lint (customize as needed)
+  tests = system('scripts/smoke.sh') if File.exist?('scripts/smoke.sh')
+  lint = true # Add lint command if available
+  tests && lint
 end
 
 main if __FILE__ == $0
