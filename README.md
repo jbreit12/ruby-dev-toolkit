@@ -115,6 +115,8 @@ Removes temp/log files.
 ```
 
 ## Authors
-*John Breitbeil
-*Max Henson
-*Luke Barnett
+John Breitbeil
+
+Max Henson
+
+Luke Barnett
