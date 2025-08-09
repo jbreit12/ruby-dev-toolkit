@@ -1,14 +1,91 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require_relative '../lib/rdt/project_initializer'
+require_relative '../lib/rdt/readme_generator'
+require_relative '../lib/rdt/git_helper'
+require_relative '../lib/rdt/log_cleaner'
+require_relative '../lib/rdt/csv_json'
 
+def print_usage
+  puts <<~USAGE
+    RDT (Ruby Dev Toolkit) – CLI
+
+    Usage:
+      rdt <command> [options]
+
+    Commands:
+      init_project  NAME [--no-license] [--folders="src,tests,docs"]
+        - Creates a new project folder with default files and subfolders.
+        - Example:
+            rdt init_project MyApp
+            rdt init_project MyApp --no-license --folders="src, assets, scripts"
+
+      readme_gen   [--name=MyApp] [--desc="..."] [--author="..."]
+                   [--license=MIT|Apache-2.0|Unlicense|None] [--out=README.md]
+        - Generates a README.md. Prompts interactively if name/desc not given.
+        - Example:
+            rdt readme_gen --name=InventoryTracker --desc="CLI app" --author="John B."
+
+      git_helper   [--init] [--gitignore=ruby|node|python|minimal]
+                   [--first-commit]
+                   [--remote=<git-url>] [--branch=<name>]
+                   [--push] [--status]
+        - Initializes a repo, writes .gitignore, makes first commit, sets remote, pushes, etc.
+        - Example:
+            rdt git_helper --init --gitignore=ruby --first-commit --status
+            rdt git_helper --remote=git@github.com:user/repo.git --branch=main --push
+
+      log_cleaner  [BASE_DIR] [--patterns="*.log,*.tmp"] [--confirm]
+        - Scans BASE_DIR (default: current dir) for log/temp files and deletes them (asks first unless --confirm).
+        - Default patterns: *.log, *.tmp, *.bak, tmp/**/*, log/**/*
+        - Examples:
+            rdt log_cleaner
+            rdt log_cleaner ./my_project --patterns="*.log,*.tmp" --confirm
+
+      csv_json     convert <in.csv> <out.json> [--delimiter=";"] [--force]
+             reverse <in.json> <out.csv> [--delimiter=";"] [--force]
+
+    Tips:
+      - Quote values with spaces, e.g. --desc="My cool project"  --folders="src, tests"
+      - Run `rdt help` to see this message.
+
+  USAGE
+end
+
+# --- main dispatch ---
 command = ARGV.shift
 
 case command
+when 'help', '-h', '--help', nil, ''
+  print_usage
+
 when 'init_project'
+  # Expects: ARGV = [NAME, ...flags]
   RDT::ProjectInitializer.run(ARGV)
+
+when 'readme_gen'
+  # Expects: ARGV = [...flags] (interactive if name/desc missing)
+  RDT::ReadmeGenerator.run(ARGV)
+
+when 'git_helper'
+  # Expects: ARGV = [...flags]
+  RDT::GitHelper.run(ARGV)
+
+when 'log_cleaner'
+  # Expects: ARGV = [base_dir?, --patterns=..., --confirm]
+  RDT::LogCleaner.run(ARGV)
+
 when 'csv_json'
-  RDT::CSVJSONConverter.run(ARGV)
+  # Expects: ARGV = [base_dir?, --patterns=..., --confirm]
+  RDT::CsvJsonConverter.run(ARGV)
+
+when 'readme_gen'
+  RDT::ReadmeGenerator.run(ARGV)
+
 else
-  puts "Usage: rdt [init_project | csv_json | ...]"
+  puts "Unknown command: #{command.inspect}"
+  puts
+  print_usage
+  exit 1
 end
