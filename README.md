@@ -45,7 +45,7 @@ Generates `README.md` with prompts or flags.
 
 **Example:**
 
-*WARNING: Using this command in the project root directory will replace this README file
+*WARNING: Using this command in the project root directory will replace this README file*
 ```bash
 ./bin/rdt readme_gen --name=MyApp --desc="A CLI toolkit" --author="You"
 ```
@@ -115,6 +115,6 @@ Removes temp/log files.
 ```
 
 ## Authors
-John Breitbeil
-Max Henson
-Luke Barnett
+*John Breitbeil
+*Max Henson
+*Luke Barnett
